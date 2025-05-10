@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {{ template "head.html" }}
+    <style>
+        :root {
+            --primary-color: #5e8b7e;
+            --secondary-color: #a7c4bc;
+            --accent-color: #2f5d62;
+            --light-color: #dfeeea;
+            --dark-color: #2f3e46;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            background-color: var(--light-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+        
+        .register-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 0;
+        }
+        
+        .register-card {
+            max-width: 500px;
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: auto;
+        }
+        
+        .register-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .register-body {
+            padding: 2rem;
+            background-color: white;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(94, 139, 126, 0.25);
+        }
+        
+        footer {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 1rem 0;
+            margin-top: auto;
+        }
+        
+        .step {
+            display: none;
+        }
+        
+        .step.active {
+            display: block;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        
+        .step-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #dee2e6;
+            margin: 0 5px;
+        }
+        
+        .step-dot.active {
+            background-color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    {{ template "navbar.html" }}
+
+    <!-- Register Section -->
+    <div class="register-container">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-6">
+                    <div class="register-card shadow">
+                        <div class="register-header">
+                            <h2 class="mb-0">Create Your Account</h2>
+                            <p class="mb-0">Start your mental wellness and productivity journey</p>
+                        </div>
+                        <div class="register-body">
+                            {{ if .error }}
+                            <div class="mb-3 text-center text-danger">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                {{ .error }}
+                            </div>
+                            {{ end }}
+
+                            <div class="step-indicator">
+                                <div class="step-dot active" id="step-dot-1"></div>
+                                <div class="step-dot" id="step-dot-2"></div>
+                                <div class="step-dot" id="step-dot-3"></div>
+                            </div>
+                            
+                            <form id="register-form" action="/api/register" method="POST">
+                                <!-- Step 1: Account Information -->
+                                <div class="step active" id="step-1">
+                                    <h5 class="mb-4">Account Information</h5>
+                                    <div class="mb-3">
+                                        <label for="fullname" class="form-label">Full Name</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                            <input type="text" class="form-control" id="fullname" name="nama" placeholder="Enter your full name" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label">Email Address</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="password" class="form-label">Password</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                            <input type="password" class="form-control" id="password" name="password" placeholder="Create a password" required>
+                                        </div>
+                                        <div class="form-text">Password must be at least 6 characters with letters and numbers</div>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="confirm-password" class="form-label">Confirm Password</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                            <input type="password" class="form-control" id="confirm-password" name="konfirmasipassword" placeholder="Confirm your password" required>
+                                        </div>
+                                    </div>
+                                    <div class="d-grid">
+                                        <button type="button" class="btn btn-primary py-2" onclick="nextStep(1, 2)">Continue</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Step 2: Personal Information -->
+                                <div class="step" id="step-2">
+                                    <h5 class="mb-4">Personal Information</h5>
+                                    <div class="mb-3">
+                                        <label class="form-label">What are your primary goals?</label>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" name="goal-stress" id="goal-stress">
+                                            <label class="form-check-label" for="goal-stress">Manage stress and anxiety</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" name="goal-productivity" id="goal-productivity">
+                                            <label class="form-check-label" for="goal-productivity">Improve productivity</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" name="goal-reflection" id="goal-reflection">
+                                            <label class="form-check-label" for="goal-reflection">Practice self-reflection</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" name="goal-habits" id="goal-habits">
+                                            <label class="form-check-label" for="goal-habits">Build better habits</label>
+                                        </div>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="experience" class="form-label">Have you used mental wellness apps before?</label>
+                                        <select class="form-select" name="experience" id="experience">
+                                            <option value="never">Never</option>
+                                            <option value="some">Some experience</option>
+                                            <option value="experienced">Experienced user</option>
+                                        </select>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <button type="button" class="btn btn-outline-primary py-2" onclick="prevStep(2, 1)">Back</button>
+                                        <button type="button" class="btn btn-primary py-2" onclick="nextStep(2, 3)">Continue</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Step 3: Preferences -->
+                                <div class="step" id="step-3">
+                                    <h5 class="mb-4">Preferences</h5>
+                                    <div class="mb-3">
+                                        <label class="form-label">Preferred check-in frequency</label>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="radio" name="frequency" id="frequency-daily" checked>
+                                            <label class="form-check-label" for="frequency-daily">Daily</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="radio" name="frequency" id="frequency-weekly">
+                                            <label class="form-check-label" for="frequency-weekly">Weekly</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="radio" name="frequency" id="frequency-manual">
+                                            <label class="form-check-label" for="frequency-manual">Only when I initiate</label>
+                                        </div>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="communication-style" class="form-label">Preferred communication style</label>
+                                        <select class="form-select" name="communication-style" id="communication-style">
+                                            <option value="supportive">Supportive and empathetic</option>
+                                            <option value="direct">Direct and straightforward</option>
+                                            <option value="motivational">Motivational and encouraging</option>
+                                            <option value="analytical">Analytical and informative</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-4 form-check">
+                                        <input class="form-check-input" type="checkbox" name="terms" id="terms" required>
+                                        <label class="form-check-label" for="terms">
+                                            I agree to the <a href="#" class="text-decoration-none">Terms of Service</a> and <a href="#" class="text-decoration-none">Privacy Policy</a>
+                                        </label>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <button type="button" class="btn btn-outline-primary py-2" onclick="prevStep(3, 2)">Back</button>
+                                        <button type="submit" class="btn btn-primary py-2">Create Account</button>
+                                    </div>
+                                </div>
+                            </form>
+                            
+                            <div class="mt-4 text-center">
+                                <p class="mb-0">Already have an account? <a href="/login" class="text-decoration-none">Sign in</a></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="py-3">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2025 MindfulAI. All rights reserved.</p>
+        </div>
+    </footer>
+
+    {{ template "body.html" }}
+
+    <!-- Registration Steps Script -->
+    <script>
+        function nextStep(current, next) {
+            document.getElementById(`step-${current}`).classList.remove('active');
+            document.getElementById(`step-${next}`).classList.add('active');
+            document.getElementById(`step-dot-${current}`).classList.remove('active');
+            document.getElementById(`step-dot-${next}`).classList.add('active');
+        }
+        
+        function prevStep(current, prev) {
+            document.getElementById(`step-${current}`).classList.remove('active');
+            document.getElementById(`step-${prev}`).classList.add('active');
+            document.getElementById(`step-dot-${current}`).classList.remove('active');
+            document.getElementById(`step-dot-${prev}`).classList.add('active');
+        }
+    </script>
+</body>
+</html>

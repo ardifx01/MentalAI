@@ -1,0 +1,66 @@
+<div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+    <div class="position-sticky pt-3">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class='nav-link {{if eq .url "dashboard"}}active{{end}}' href="/dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class='nav-link' href="admin-rentals.html">
+                    <i class="fas fa-list"></i>
+                    Rentals
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class='nav-link' href="admin-vehicles.html">
+                    <i class="fas fa-car"></i>
+                    Vehicles
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class='nav-link {{if eq .url "vehicle/tambah"}}active{{end}}' href="/vehicle/tambah">
+                    <i class="fas fa-car"></i>
+                    Add Vehicles
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class='nav-link' href="admin-customers.html">
+                    <i class="fas fa-users"></i>
+                    Customers
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class='nav-link' href="admin-employees.html">
+                    <i class="fas fa-user-tie"></i>
+                    Employees
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class='nav-link {{if eq .url "branches"}}active{{end}}' href="/branches">
+                    <i class="fas fa-building"></i>
+                    Branches
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class='nav-link' href="admin-payments.html">
+                    <i class="fas fa-credit-card"></i>
+                    Payments
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class='nav-link' href="admin-reports.html">
+                    <i class="fas fa-chart-bar"></i>
+                    Reports
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class='nav-link' href="admin-settings.html">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>

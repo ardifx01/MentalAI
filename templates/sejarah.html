@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {{ template "head.html" }}
+    <style>
+        :root {
+            --primary-color: #5e8b7e;
+            --secondary-color: #a7c4bc;
+            --accent-color: #2f5d62;
+            --light-color: #dfeeea;
+            --dark-color: #2f3e46;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        p {
+            margin: 0;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+        
+        .sidebar {
+            background-color: white;
+            height: calc(100vh - 56px);
+            position: sticky;
+            top: 56px;
+            overflow-y: auto;
+            border-right: 1px solid #dee2e6;
+        }
+        
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: #333;
+            text-decoration: none;
+            border-radius: 0.25rem;
+            margin: 0.25rem 0;
+        }
+        
+        .sidebar-link:hover {
+            background-color: var(--light-color);
+        }
+        
+        .sidebar-link.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .sidebar-link i {
+            margin-right: 0.75rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .chat-history-container {
+            background-color: white;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            height: calc(100vh - 120px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-history-header {
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .chat-history-search {
+            padding: 1rem;
+            background-color: white;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .chat-history-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+        }
+        
+        .chat-history-item {
+            border-bottom: 1px solid #f1f1f1;
+            transition: all 0.2s;
+        }
+        
+        .chat-history-item:hover {
+            background-color: var(--light-color);
+        }
+        
+        .chat-history-item.active {
+            background-color: var(--light-color);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .chat-history-link {
+            display: block;
+            padding: 1rem;
+            color: inherit;
+            text-decoration: none;
+        }
+        
+        .chat-history-date {
+            font-size: 0.75rem;
+            color: #6c757d;
+        }
+        
+        .chat-history-preview {
+            color: #6c757d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+        
+        .chat-history-tags {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .chat-history-tag {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 1rem;
+            background-color: var(--secondary-color);
+            color: var(--dark-color);
+        }
+        
+        .chat-detail-container {
+            background-color: white;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            height: calc(100vh - 120px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-detail-header {
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .chat-detail-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .message {
+            max-width: 75%;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            position: relative;
+        }
+        
+        .message-user {
+            align-self: flex-end;
+            background-color: var(--primary-color);
+            color: white;
+            border-bottom-right-radius: 0.25rem;
+        }
+        
+        .message-bot {
+            align-self: flex-start;
+            background-color: #f1f1f1;
+            border-bottom-left-radius: 0.25rem;
+        }
+        
+        .message-time {
+            font-size: 0.7rem;
+            margin-top: 0.25rem;
+            opacity: 0.8;
+        }
+        
+        .chat-detail-footer {
+            padding: 1rem;
+            border-top: 1px solid #dee2e6;
+            background-color: white;
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .date-divider {
+            text-align: center;
+            position: relative;
+            margin: 1.5rem 0;
+        }
+        
+        .date-divider::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background-color: #dee2e6;
+            z-index: 1;
+        }
+        
+        .date-divider span {
+            background-color: white;
+            padding: 0 1rem;
+            position: relative;
+            z-index: 2;
+            color: #6c757d;
+            font-size: 0.8rem;
+        }
+        
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 2rem;
+            text-align: center;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: var(--secondary-color);
+        }
+
+        .urgency-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 1rem;
+            color: white;
+            font-weight: bold;
+            display: inline-block;
+            margin-left: 0.5rem;
+        }
+
+        .urgency-1 {
+            background-color: #198754;
+        }
+
+        .urgency-2 {
+            background-color: #20c997;
+        }
+
+        .urgency-3 {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .urgency-4 {
+            background-color: #fd7e14;
+        }
+
+        .urgency-5 {
+            background-color: #dc3545;
+        }
+
+        .urgency-filter {
+            display: flex;
+            gap: 0.25rem;
+            margin-top: 0.5rem;
+        }
+
+        .urgency-filter-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .urgency-filter-btn.active {
+            border-color: #333;
+        }
+
+        .urgency-filter-btn.urgency-all {
+            background-color: #6c757d;
+        }
+
+        .loader {
+            width: 50px;
+            aspect-ratio: 1;
+            border-radius: 50%;
+            border: 8px solid #198754;
+            animation:
+            l20-1 0.8s infinite linear alternate,
+            l20-2 1.6s infinite linear;
+        }
+        @keyframes l20-1{
+            0%    {clip-path: polygon(50% 50%,0       0,  50%   0%,  50%    0%, 50%    0%, 50%    0%, 50%    0% )}
+            12.5% {clip-path: polygon(50% 50%,0       0,  50%   0%,  100%   0%, 100%   0%, 100%   0%, 100%   0% )}
+            25%   {clip-path: polygon(50% 50%,0       0,  50%   0%,  100%   0%, 100% 100%, 100% 100%, 100% 100% )}
+            50%   {clip-path: polygon(50% 50%,0       0,  50%   0%,  100%   0%, 100% 100%, 50%  100%, 0%   100% )}
+            62.5% {clip-path: polygon(50% 50%,100%    0, 100%   0%,  100%   0%, 100% 100%, 50%  100%, 0%   100% )}
+            75%   {clip-path: polygon(50% 50%,100% 100%, 100% 100%,  100% 100%, 100% 100%, 50%  100%, 0%   100% )}
+            100%  {clip-path: polygon(50% 50%,50%  100%,  50% 100%,   50% 100%,  50% 100%, 50%  100%, 0%   100% )}
+        }
+        @keyframes l20-2{ 
+            0%    {transform:scaleY(1)  rotate(0deg)}
+            49.99%{transform:scaleY(1)  rotate(135deg)}
+            50%   {transform:scaleY(-1) rotate(0deg)}
+            100%  {transform:scaleY(-1) rotate(-135deg)}
+        }
+    </style>
+</head>
+<body>
+    {{ template "navbar.html" }}
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-2 d-none d-lg-block p-0">
+                <div class="sidebar py-3">
+                    <div class="px-3 mb-3">
+                        <h6 class="text-uppercase text-muted small">Main</h6>
+                    </div>
+                    <a href="/dashboard" class="sidebar-link">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    <a href="/history" class="sidebar-link active">
+                        <i class="fas fa-comment-alt"></i> Chat
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <i class="fas fa-chart-line"></i> Progress
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <i class="fas fa-tasks"></i> Tasks
+                    </a>
+                    
+                    <div class="px-3 mb-3 mt-4">
+                        <h6 class="text-uppercase text-muted small">Tools</h6>
+                    </div>
+                    <a href="#" class="sidebar-link">
+                        <i class="fas fa-book"></i> Journal
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <i class="fas fa-meditation"></i> Meditation
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <i class="fas fa-lightbulb"></i> Insights
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-lg-10 col-md-12 py-2 px-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h4 class="mb-0">Chat History</h4>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
+                            <i class="fas fa-bars"></i> Menu
+                        </button>
+                        <a href="/dashboard" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus"></i> New Chat
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="row g-4">
+                    <!-- Chat History List -->
+                    <div class="col-md-4">
+                        <div class="chat-history-container">
+                            <div class="chat-history-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Conversations</h5>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                                            <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2"></i> Export All</a></li>
+                                            <li><a class="dropdown-item" href="#"><i class="fas fa-trash me-2"></i> Delete All</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chat-history-search">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-transparent border-end-0">
+                                        <i class="fas fa-search"></i>
+                                    </span>
+                                    <input type="text" class="form-control border-start-0" placeholder="Search conversations...">
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <!--
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-secondary active">All</button>
+                                        <button type="button" class="btn btn-outline-secondary">Stress</button>
+                                        <button type="button" class="btn btn-outline-secondary">Productivity</button>
+                                        <button type="button" class="btn btn-outline-secondary">High Urgency</button>
+                                    </div>
+                                    -->
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            Sort
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><a class="dropdown-item urutan" data-sort="newest">Newest First</a></li>
+                                            <li><a class="dropdown-item urutan" data-sort="oldest">Oldest First</a></li>
+                                            <li><a class="dropdown-item urutan" data-sort="urgency_highest">Highest Urgency Level</a></li>
+                                            <li><a class="dropdown-item urutan" data-sort="urgency_lowest">Lowest Urgency Level</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chat-history-list">
+                                {{ range $index, $value := .percakapan }}
+                                <div class="chat-history-item {{ if eq $index 0 }}active{{ end }}">
+                                    <a href="" class="chat-history-link" data-chat-id="{{$value.ID}}" data-urgency="{{ $value.UrgencyLevel }}">
+                                        <div class="d-flex justify-content-between">
+                                            <h6 class="mb-1" style="max-width: 80%;" >{{ $value.Judul }} <span class="urgency-badge urgency-{{ $value.UrgencyLevel }}">{{ $value.UrgencyLevel }}</span></h6>
+                                            <span class="chat-history-date">{{ ConvertWaktuKeString $value.UpdatedAt }}</span>
+                                        </div>
+                                        <p class="chat-history-preview mb-1">{{ DapatinLastValueOmongan $value }}</p>
+                                        <!-- Tags
+                                        <div class="chat-history-tags">
+                                            <span class="chat-history-tag">Stress</span>
+                                            <span class="chat-history-tag">Breathing</span>
+                                        </div>
+                                        -->
+                                    </a>
+                                </div>
+                                {{ end}}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Detail View -->
+                    <div class="col-md-8">
+                        <div class="chat-detail-container">
+                            <div class="chat-detail-header">
+                                <div class="d-flex justify-content-between align-items-center" id="chat" id-chat="">
+                                    <div>
+                                        <h5 class="mb-0" id="judul-chat">
+                                            <span class="urgency-badge" id="urgencylevel-chat"></span>
+                                        </h5>
+                                        <div class="text-white-50" id="waktu-chat"></div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-light dropdown-toggle" type="button" id="urgencyDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                                Change Urgency
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="urgencyDropdown">
+                                                <li><a class="dropdown-item" href="#" data-urgency="1"><span class="urgency-badge urgency-1">1</span> Low Urgency</a></li>
+                                                <li><a class="dropdown-item" href="#" data-urgency="2"><span class="urgency-badge urgency-2">2</span> Mild Urgency</a></li>
+                                                <li><a class="dropdown-item" href="#" data-urgency="3"><span class="urgency-badge urgency-3">3</span> Moderate Urgency</a></li>
+                                                <li><a class="dropdown-item" href="#" data-urgency="4"><span class="urgency-badge urgency-4">4</span> High Urgency</a></li>
+                                                <li><a class="dropdown-item" href="#" data-urgency="5"><span class="urgency-badge urgency-5">5</span> Critical Urgency</a></li>
+                                            </ul>
+                                        </div>
+                                        <button class="btn btn-sm btn-light" title="Delete conversation" data-bs-toggle="modal" data-bs-target="#hapusModal">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chat-detail-messages invisible" id="chat-detail-messages">
+                                <div class="date-divider">
+                                    <span>Today, April 30, 2025</span>
+                                </div>
+
+                                <div class="message message-user">
+                                    <p class="mb-0">I'm feeling a bit stressed about work deadlines.</p>
+                                    <div class="message-time text-end">2:30 PM</div>
+                                </div>
+                                
+                                <div class="message message-bot">
+                                    <p class="mb-0">I understand how work deadlines can be stressful. Would you like to try a quick breathing exercise to help reduce stress, or would you prefer some productivity tips to help manage your workload?</p>
+                                    <div class="message-time">2:30 PM</div>
+                                </div>
+                                
+                                <div class="message message-user">
+                                    <p class="mb-0">I'd like to try the breathing exercise first.</p>
+                                    <div class="message-time text-end">2:31 PM</div>
+                                </div>
+                                
+                                <div class="message message-bot">
+                                    <p class="mb-0">Great choice! Let's do a simple 4-7-8 breathing technique:</p>
+                                    <ol class="mb-0 mt-2">
+                                        <li>Inhale quietly through your nose for 4 seconds</li>
+                                        <li>Hold your breath for 7 seconds</li>
+                                        <li>Exhale completely through your mouth for 8 seconds</li>
+                                        <li>Repeat this cycle 4 times</li>
+                                    </ol>
+                                    <p class="mt-2 mb-0">I'll guide you through it. Ready to begin?</p>
+                                    <div class="message-time">2:31 PM</div>
+                                </div>
+                                
+                                <div class="message message-user">
+                                    <p class="mb-0">Yes, I'm ready.</p>
+                                    <div class="message-time text-end">2:32 PM</div>
+                                </div>
+                                
+                                <div class="message message-bot">
+                                    <p class="mb-0">Let's start the breathing exercise. Inhale through your nose for 4 seconds... Hold for 7 seconds... Now exhale slowly through your mouth for 8 seconds...</p>
+                                    <p class="mt-2 mb-0">Great job! Let's continue with the second breath. Inhale through your nose for 4 seconds...</p>
+                                    <div class="message-time">2:32 PM</div>
+                                </div>
+                                
+                                <div class="message message-bot">
+                                    <p class="mb-0">You've completed all 4 cycles. How are you feeling now?</p>
+                                    <div class="message-time">2:34 PM</div>
+                                </div>
+                                
+                                <div class="message message-user">
+                                    <p class="mb-0">I'm feeling more relaxed. That was helpful, thank you.</p>
+                                    <div class="message-time text-end">2:35 PM</div>
+                                </div>
+                                
+                                <div class="message message-bot">
+                                    <p class="mb-0">I'm glad to hear that you're feeling more relaxed! This 4-7-8 breathing technique is a great tool you can use anytime you feel stressed.</p>
+                                    <p class="mt-2 mb-0">Would you like to discuss some strategies for managing your work deadlines more effectively now?</p>
+                                    <div class="message-time">2:35 PM</div>
+                                </div>
+                                
+                                <div class="message message-user">
+                                    <p class="mb-0">Yes, that would be helpful. I have several projects due next week and I'm feeling overwhelmed.</p>
+                                    <div class="message-time text-end">2:36 PM</div>
+                                </div>
+                                
+                                <div class="message message-bot">
+                                    <p class="mb-0">I understand that feeling of being overwhelmed with multiple deadlines. Here are some effective strategies to help you manage your workload:</p>
+                                    <ol class="mb-0 mt-2">
+                                        <li><strong>Prioritize tasks:</strong> Use the Eisenhower Matrix to categorize tasks by urgency and importance</li>
+                                        <li><strong>Break down projects:</strong> Divide large projects into smaller, manageable tasks</li>
+                                        <li><strong>Time blocking:</strong> Allocate specific time blocks for focused work on each project</li>
+                                        <li><strong>Set boundaries:</strong> Communicate your capacity clearly with colleagues</li>
+                                        <li><strong>Take strategic breaks:</strong> Use the Pomodoro Technique (25 min work, 5 min break)</li>
+                                    </ol>
+                                    <p class="mt-2 mb-0">Would you like me to explain any of these strategies in more detail?</p>
+                                    <div class="message-time">2:37 PM</div>
+                                </div>
+                                
+                                <div class="date-divider">
+                                    <span>End of Conversation</span>
+                                </div>
+                            </div>
+                            <div class="chat-detail-footer">
+                                <a href="/dashboard" id="lanjutkan_percakapan" class="btn btn-primary">
+                                    <i class="fas fa-comment"></i> Continue This Conversation
+                                </a>
+                                <!--
+                                <button class="btn btn-outline-primary">
+                                    <i class="fas fa-tag"></i> Edit Tags
+                                </button>
+                                -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile Sidebar (Offcanvas) -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">
+                <i class="fas fa-brain me-2"></i>
+                <span class="fw-bold">MindfulAI</span>
+            </h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            <div class="py-3">
+                <div class="px-3 mb-3">
+                    <h6 class="text-uppercase text-muted small">Main</h6>
+                </div>
+                <a href="dashboard.html" class="sidebar-link">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                <a href="/history" class="sidebar-link active">
+                    <i class="fas fa-comment-alt"></i> Chat
+                </a>
+                <a href="#" class="sidebar-link">
+                    <i class="fas fa-chart-line"></i> Progress
+                </a>
+                <a href="#" class="sidebar-link">
+                    <i class="fas fa-tasks"></i> Tasks
+                </a>
+                
+                <div class="px-3 mb-3 mt-4">
+                    <h6 class="text-uppercase text-muted small">Tools</h6>
+                </div>
+                <a href="#" class="sidebar-link">
+                    <i class="fas fa-book"></i> Journal
+                </a>
+                <a href="#" class="sidebar-link">
+                    <i class="fas fa-meditation"></i> Meditation
+                </a>
+                <a href="#" class="sidebar-link">
+                    <i class="fas fa-lightbulb"></i> Insights
+                </a>
+                <a href="#" class="sidebar-link">
+                    <i class="fas fa-cog"></i> Settings
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State Template (Hidden by default) -->
+    <div class="d-none" id="empty-state-template">
+        <div class="empty-state">
+            <i class="fas fa-comment-slash"></i>
+            <h5>No conversation selected</h5>
+            <p class="text-muted">Select a conversation from the list or start a new chat</p>
+            <a href="/dashboard" class="btn btn-primary mt-3">
+                Start New Chat
+            </a>
+        </div>
+    </div>
+
+     <!-- Loading Template (Hidden by default) -->
+     <div class="d-none" id="loading-state-template">
+        <div class="empty-state">
+            <div class="loader"></div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="hapusModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete Conversastion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete the conversastion?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Nevermind</button>
+                    <button type="button" class="btn btn-primary" id="tombolHapusChat">I'm really sure.</button>
+                </div>
+            </div>
+        </div>
+    </div>
+      
+
+    {{ template "body.html" }}
+
+    <!-- Chat History Script -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.7/marked.min.js"></script>
+    <script id="dipilih-data" type="application/json">{{ .dipilih }}</script>
+    <script type="text/javascript" src="/assets/js/load_percakapan.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle chat history item clicks
+            const chatDetailMessages = document.getElementById('chat-detail-messages');
+            const chatHistoryItems = document.querySelectorAll('.chat-history-item');
+            const emptyStateTemplate = document.getElementById('empty-state-template');
+            chatDetailMessages.classList.remove('invisible');
+            
+            chatHistoryItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    chatHistoryItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const chatId = this.querySelector('a').getAttribute('data-chat-id');
+                    chatDetailMessages.innerHTML = document.getElementById('loading-state-template').innerHTML;
+
+                    fetch("/api/dapatinChat", {
+                        "credentials": "include",
+                        "headers": {
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0",
+                            "Accept": "*/*",
+                            "Accept-Language": "en-US,en;q=0.5",
+                            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                            "X-Requested-With": "XMLHttpRequest",
+                            "Sec-GPC": "1",
+                            "Sec-Fetch-Dest": "empty",
+                            "Sec-Fetch-Mode": "cors",
+                            "Sec-Fetch-Site": "same-origin",
+                            "Priority": "u=0"
+                        },
+                        "body": new URLSearchParams(Object.entries({
+                            "percakapan_id": chatId,
+                        })).toString(),
+                        "method": "POST",
+                        "mode": "cors"
+                    }).then(response => {
+                        if (!response.ok) {
+                            throw new Error('Hasil tidak valid');
+                        }
+                        return response.json();
+                    }).then(data => {
+                        console.log(data.response);
+                        UpdatePercakapan(data.response);
+                    }).catch(error => {
+                        console.log(error);
+                    });
+                    
+                    // For demo purposes, we're not actually loading different chats
+                    // In a real app, you would fetch the chat data based on the chatId
+                    
+                    // Scroll to bottom of messages
+                    chatDetailMessages.scrollTop = chatDetailMessages.scrollHeight;
+                });
+            });
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchQuery = urlParams.get('search');
+
+            const searchInput = document.querySelector('.chat-history-search input');
+            if (searchQuery) {
+                searchInput.value = searchQuery;
+            }
+
+            /*
+            // Search functionality
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                
+                chatHistoryItems.forEach(item => {
+                    const title = item.querySelector('h6').textContent.toLowerCase();
+                    const preview = item.querySelector('.chat-history-preview').textContent.toLowerCase();
+                    const tags = Array.from(item.querySelectorAll('.chat-history-tag')).map(tag => tag.textContent.toLowerCase());
+                    
+                    // Check if the search term is in the title, preview, or tags
+                    const isMatch = title.includes(searchTerm) || 
+                                   preview.includes(searchTerm) || 
+                                   tags.some(tag => tag.includes(searchTerm));
+                    
+                    item.style.display = isMatch ? 'block' : 'none';
+                });
+            });
+            */
+
+            searchInput.addEventListener("keydown", function(e) {
+                if(e.key == "Enter") {
+                    const query = new URLSearchParams(window.location.search);
+                    query.set('search', searchInput.value.trim());
+                    window.location.search = query.toString();
+                }
+            });
+
+            document.querySelectorAll('.urutan').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+
+                    const sortValue = link.dataset.sort;
+                    const query = new URLSearchParams(window.location.search);
+                    
+                    query.set('sort', sortValue);
+                    window.location.search = query.toString();
+                });
+            });
+
+            // Initialize - scroll to bottom of messages
+            chatDetailMessages.scrollTop = chatDetailMessages.scrollHeight;
+
+            // Urgency filter functionality
+            const urgencyFilterBtns = document.querySelectorAll('.urgency-filter-btn');
+            urgencyFilterBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Update active state
+                    urgencyFilterBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const selectedUrgency = this.getAttribute('data-urgency');
+                    
+                    // Filter chat history items
+                    chatHistoryItems.forEach(item => {
+                        const itemUrgency = item.querySelector('a').getAttribute('data-urgency');
+                        
+                        if (selectedUrgency === 'all' || itemUrgency === selectedUrgency) {
+                            item.style.display = 'block';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            });
+
+            // Change urgency functionality
+            const urgencyDropdownItems = document.querySelectorAll('#urgencyDropdown + .dropdown-menu .dropdown-item');
+            urgencyDropdownItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const newUrgency = this.getAttribute('data-urgency');
+                    const urgencyBadge = document.querySelector('.chat-detail-header .urgency-badge');
+                    
+                    // Remove old urgency class
+                    urgencyBadge.className = 'urgency-badge urgency-' + newUrgency;
+                    urgencyBadge.textContent = newUrgency;
+                    
+                    // In a real app, you would update the urgency in the database
+                    console.log('Changed urgency to:', newUrgency);
+                });
+            });
+
+            const hapusModal = document.getElementById('hapusModal');
+            const hapusButton = document.getElementById('tombolHapusChat');
+            
+            hapusButton.addEventListener('click', function() {
+                $.post("/api/chat/hapus", {
+                    "percakapan_id": percakapan_id,
+                }, function(data) {
+                    console.log(data);
+                }).fail(function(err) {
+                    console.log(err);
+                }).always(function() {
+                    window.location.reload();
+                });
+            });
+
+            const LanjutkanPercakapan = document.getElementById('lanjutkan_percakapan');
+            LanjutkanPercakapan.addEventListener('click', function(e) {
+                e.preventDefault();
+                const chatId = document.getElementById('chat').getAttribute('id-chat');
+                window.location.href = `/dashboard?chat=${chatId}`;
+            });
+        });
+    </script>
+</body>
+</html>
