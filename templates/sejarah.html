@@ -818,9 +818,24 @@
                     // Remove old urgency class
                     urgencyBadge.className = 'urgency-badge urgency-' + newUrgency;
                     urgencyBadge.textContent = newUrgency;
+
+                    const urgencyBadgeSejarah = document.querySelector(`[data-chat-id="${percakapan_id}"]`).querySelector('.urgency-badge')
+                    urgencyBadgeSejarah.className = 'urgency-badge urgency-' + newUrgency;
+                    urgencyBadgeSejarah.textContent = newUrgency;
                     
                     // In a real app, you would update the urgency in the database
-                    console.log('Changed urgency to:', newUrgency);
+                    $.post("/api/chat/update", {
+                        "percakapan_id": percakapan_id,
+                        "urgency_level": newUrgency
+                    }, function(data) {
+                        if (data.status === "sukses") {
+                            console.log("Urgency level updated successfully.");
+                        } else {
+                            console.error("Failed to update urgency level.");
+                        }
+                    }, "json").fail(function(err) {
+                        console.error("Error updating urgency level.", err);
+                    });
                 });
             });
 

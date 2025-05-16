@@ -360,7 +360,7 @@ func UpdateChatHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Conversation updated successfully"})
+	c.JSON(http.StatusOK, gin.H{"status": "sukses"})
 }
 
 func RegisterHandler(c *gin.Context) {
