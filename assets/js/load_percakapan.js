@@ -76,8 +76,10 @@ function UpdatePercakapan(DataJson) {
         }
     }
 
-    percakapan_id = DataJson.id;
-    document.getElementById('chat').setAttribute("id-chat", percakapan_id);
+    if(DataJson) {
+        percakapan_id = DataJson.id;
+        document.getElementById('chat').setAttribute("id-chat", percakapan_id);
+    }
 }
 
 let percakapan_id = "";
@@ -90,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const JsonRaw = document.getElementById('dipilih-data').textContent.trim();
     if(JsonRaw !== "null") {
         dipilihJSON = JsonRaw === "" ? {} : JSON.parse(atob(JSON.parse(JsonRaw)));        
-        percakapan_id = JsonRaw === "" ? "" : dipilihJSON.id;
+        percakapan_id = dipilihJSON === null ? "" : dipilihJSON.id;
                     
         UpdatePercakapan(dipilihJSON);
     } else {

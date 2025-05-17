@@ -349,6 +349,7 @@
                     <a href="/history" class="sidebar-link active">
                         <i class="fas fa-comment-alt"></i> Chat
                     </a>
+                    <!--
                     <a href="#" class="sidebar-link">
                         <i class="fas fa-chart-line"></i> Progress
                     </a>
@@ -371,6 +372,7 @@
                     <a href="#" class="sidebar-link">
                         <i class="fas fa-cog"></i> Settings
                     </a>
+                -->
                 </div>
             </div>
             
@@ -423,10 +425,12 @@
                                     </div>
                                     -->
                                     <div class="dropdown">
-                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" id="sortDropdown" type="button" data-bs-toggle="dropdown">
                                             Sort
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><a class="dropdown-item urutan" data-sort="a-z">Title (A-Z)</a></li>
+                                            <li><a class="dropdown-item urutan" data-sort="z-a">Title (Z-A)</a></li>
                                             <li><a class="dropdown-item urutan" data-sort="newest">Newest First</a></li>
                                             <li><a class="dropdown-item urutan" data-sort="oldest">Oldest First</a></li>
                                             <li><a class="dropdown-item urutan" data-sort="urgency_highest">Highest Urgency Level</a></li>
@@ -453,6 +457,9 @@
                                     </a>
                                 </div>
                                 {{ end}}
+                            </div>
+                            <div class="text-center p-3 d-none" id="tidak-ada-sejarah">
+                                No Chat Available
                             </div>
                         </div>
                     </div>
@@ -599,7 +606,7 @@
                 <div class="px-3 mb-3">
                     <h6 class="text-uppercase text-muted small">Main</h6>
                 </div>
-                <a href="dashboard.html" class="sidebar-link">
+                <a href="/dashboard" class="sidebar-link">
                     <i class="fas fa-home"></i> Dashboard
                 </a>
                 <a href="/history" class="sidebar-link active">
@@ -676,13 +683,35 @@
     <script id="dipilih-data" type="application/json">{{ .dipilih }}</script>
     <script type="text/javascript" src="/assets/js/load_percakapan.js"></script>
     <script>
+        const NamaSort = {
+            "a-z": "Title (A-Z)",
+            "z-a": "Title (Z-A)",
+            "newest": "Newest First",
+            "oldest": "Oldest First",
+            "urgency_highest": "Highest Urgency Level",
+            "urgency_lowest": "Lowest Urgency Level"
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            // Handle chat history item clicks
             const chatDetailMessages = document.getElementById('chat-detail-messages');
             const chatHistoryItems = document.querySelectorAll('.chat-history-item');
             const emptyStateTemplate = document.getElementById('empty-state-template');
+            const sortDropdown = document.getElementById('sortDropdown');
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchQuery = urlParams.get('search');
+            const sortQuery = urlParams.get("sort");
+
             chatDetailMessages.classList.remove('invisible');
+
+            if(chatHistoryItems.length <= 0) {
+                document.querySelector(".chat-history-list").classList.add("d-none");
+                document.getElementById("tidak-ada-sejarah").classList.remove("d-none");
+            }
             
+            if(sortQuery != "" && NamaSort[sortQuery]) {
+                sortDropdown.innerText = "Sort | " + NamaSort[sortQuery];
+            }
+
             chatHistoryItems.forEach(item => {
                 item.addEventListener('click', function(e) {
                     e.preventDefault();
@@ -723,42 +752,15 @@
                     }).catch(error => {
                         console.log(error);
                     });
-                    
-                    // For demo purposes, we're not actually loading different chats
-                    // In a real app, you would fetch the chat data based on the chatId
-                    
-                    // Scroll to bottom of messages
+
                     chatDetailMessages.scrollTop = chatDetailMessages.scrollHeight;
                 });
             });
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const searchQuery = urlParams.get('search');
 
             const searchInput = document.querySelector('.chat-history-search input');
             if (searchQuery) {
                 searchInput.value = searchQuery;
             }
-
-            /*
-            // Search functionality
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                
-                chatHistoryItems.forEach(item => {
-                    const title = item.querySelector('h6').textContent.toLowerCase();
-                    const preview = item.querySelector('.chat-history-preview').textContent.toLowerCase();
-                    const tags = Array.from(item.querySelectorAll('.chat-history-tag')).map(tag => tag.textContent.toLowerCase());
-                    
-                    // Check if the search term is in the title, preview, or tags
-                    const isMatch = title.includes(searchTerm) || 
-                                   preview.includes(searchTerm) || 
-                                   tags.some(tag => tag.includes(searchTerm));
-                    
-                    item.style.display = isMatch ? 'block' : 'none';
-                });
-            });
-            */
 
             searchInput.addEventListener("keydown", function(e) {
                 if(e.key == "Enter") {
@@ -776,6 +778,7 @@
                     const query = new URLSearchParams(window.location.search);
                     
                     query.set('sort', sortValue);
+                    sortDropdown.textContent = "Sort | " + link.textContent;
                     window.location.search = query.toString();
                 });
             });

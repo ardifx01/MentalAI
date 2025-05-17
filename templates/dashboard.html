@@ -343,6 +343,7 @@
                     <a href="/history" class="sidebar-link">
                         <i class="fas fa-comment-alt"></i> Chat
                     </a>
+                    <!--
                     <a href="#" class="sidebar-link">
                         <i class="fas fa-chart-line"></i> Progress
                     </a>
@@ -365,6 +366,7 @@
                     <a href="#" class="sidebar-link">
                         <i class="fas fa-cog"></i> Settings
                     </a>
+                    -->
                 </div>
             </div>
             
@@ -465,6 +467,7 @@
                             </div>
                             
                             <!-- Progress Widget -->
+                            <!--
                             <div class="col-12">
                                 <div class="widget-card">
                                     <div class="widget-header">
@@ -502,8 +505,10 @@
                                     </div>
                                 </div>
                             </div>
+                            -->
                             
                             <!-- Tasks Widget -->
+                            <!--
                             <div class="col-12">
                                 <div class="widget-card">
                                     <div class="widget-header d-flex justify-content-between align-items-center">
@@ -569,6 +574,7 @@
                                     </div>
                                 </div>
                             </div>
+                            -->
                         </div>
                     </div>
                 </div>
@@ -644,6 +650,14 @@
     <script type="text/javascript" src="/assets/js/load_percakapan.js"></script>
     <!-- Chat Functionality Script -->
     <script>
+        const UrgencyName = {
+            "1": "Low",
+            "2": "Mild",
+            "3": "Moderate",
+            "4": "High",
+            "5": "Critical"
+        };
+        
         document.addEventListener('DOMContentLoaded', function() {
             const chatForm = document.getElementById('chat-form');
             const chatInput = document.getElementById('chat-input');
@@ -651,17 +665,14 @@
             let UrgencyLevel = "1";
             let mood = "Good";
             
-            // Handle chat form submission
             chatForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
                 const message = chatInput.value.trim();
                 if (message) {
-                    // Add user message
                     addMessage(message, 'user');
                     chatInput.value = '';
                     
-                    // Show typing indicator
                     showTypingIndicator();
 
                     fetch("/api/chat", {
@@ -703,26 +714,18 @@
                 }
             });
             
-            // Function to add a message to the chat
             function addMessage(text, sender) {
                 const messageDiv = document.createElement('div');
                 messageDiv.classList.add('message');
                 messageDiv.classList.add(sender === 'user' ? 'message-user' : 'message-bot');
                 
                 messageDiv.innerHTML = marked.parse(text);
-                // const paragraph = document.createElement('p');
-                // paragraph.classList.add('mb-0');
-                // paragraph.textContent = text;
-                // paragraph.innerHTML = marked.parse(text); // Use marked to parse markdown
                 
-                // messageDiv.appendChild(paragraph);
                 chatMessages.appendChild(messageDiv);
                 
-                // Scroll to bottom
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }
             
-            // Function to show typing indicator
             function showTypingIndicator() {
                 const typingDiv = document.createElement('div');
                 typingDiv.classList.add('typing-indicator');
@@ -733,14 +736,12 @@
                     <div class="typing-dot"></div>
                 `;
                 
-                // Remove existing typing indicator if any
                 hideTypingIndicator();
                 
                 chatMessages.appendChild(typingDiv);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }
             
-            // Function to hide typing indicator
             function hideTypingIndicator() {
                 const typingIndicator = chatMessages.querySelector('.typing-indicator');
                 if (typingIndicator) {
@@ -748,7 +749,6 @@
                 }
             }
             
-            // Initialize mood tracker
             const moodItems = document.querySelectorAll('.mood-item');
             moodItems.forEach(item => {
                 item.addEventListener('click', function() {
@@ -762,14 +762,6 @@
             const urgencyDetailDropdown = document.getElementById('urgencyDetailDropdown');
 
             if(!jQuery.isEmptyObject(dipilihJSON)) {
-                const UrgencyName = {
-                    "1": "Low",
-                    "2": "Mild",
-                    "3": "Moderate",
-                    "4": "High",
-                    "5": "Critical"
-                };
-
                 urgencyDetailDropdown.innerHTML = `<span class="urgency-dot urgency-${dipilihJSON.urgency_level}"></span> Urgency: ${dipilihJSON.urgency_level} - ${UrgencyName[dipilihJSON.urgency_level]}`;
                 
                 urgencyDetailLevelItems.forEach(i => {
@@ -785,15 +777,12 @@
                 item.addEventListener('click', function(e) {
                     e.preventDefault();
                     
-                    // Update active state
                     urgencyDetailLevelItems.forEach(i => i.classList.remove('active'));
                     this.classList.add('active');
                     
-                    // Get urgency level
                     UrgencyLevel = this.getAttribute('data-level');
                     const levelText = this.textContent.trim();
                     
-                    // Update dropdown button text
                     urgencyDetailDropdown.innerHTML = `<span class="urgency-dot urgency-${UrgencyLevel}"></span> ${levelText}`;               
 
                     if(percakapan_id === "") {

@@ -23,6 +23,114 @@ import (
 	"gorm.io/gorm"
 )
 
+/*********             FUNCTIONS              *********/
+func selectionSort(percakapan []*models.Percakapan, urutan string) {
+	for i := 0; i < len(percakapan); i++ {
+		maxIndex := i
+		for j := i + 1; j < len(percakapan); j++ {
+			kondisi := false
+			if urutan == "asc" {
+				kondisi = percakapan[j].UrgencyLevel < percakapan[maxIndex].UrgencyLevel
+			} else if urutan == "desc" {
+				kondisi = percakapan[j].UrgencyLevel > percakapan[maxIndex].UrgencyLevel
+			}
+
+			if kondisi {
+				maxIndex = j
+			}
+		}
+
+		temp := percakapan[i]
+		percakapan[i] = percakapan[maxIndex]
+		percakapan[maxIndex] = temp
+	}
+}
+
+func insertionSort(percakapan []*models.Percakapan, urutan string) {
+	for i := 1; i < len(percakapan); i++ {
+		key := percakapan[i]
+		j := i - 1
+
+		kondisi := false
+		if urutan == "asc" {
+			kondisi = percakapan[j].CreatedAt.Before(key.CreatedAt)
+		} else if urutan == "desc" {
+			kondisi = percakapan[j].CreatedAt.After(key.CreatedAt)
+		}
+
+		for j >= 0 && kondisi {
+			percakapan[j+1] = percakapan[j]
+			j = j - 1
+		}
+
+		percakapan[j+1] = key
+	}
+}
+
+func bubbleSort(percakapan []*models.Percakapan, urutan string) {
+	for i := 0; i < len(percakapan)-1; i++ {
+		for j := 0; j < len(percakapan)-i-1; j++ {
+			urut := false
+
+			if urutan == "asc" {
+				urut = percakapan[j].Judul > percakapan[j+1].Judul
+			} else if urutan == "desc" {
+				urut = percakapan[j].Judul < percakapan[j+1].Judul
+			}
+
+			if urut {
+				temp := percakapan[j+1]
+				percakapan[j+1] = percakapan[j]
+				percakapan[j] = temp
+			}
+		}
+	}
+}
+
+func SequentialSearch(percakapan []*models.Percakapan, yangDiCari string) []*models.Percakapan {
+	var FilterSemuaPercakapan []*models.Percakapan
+
+	for i := 0; i < len(percakapan); i++ {
+		percakapan := percakapan[i]
+		if percakapan.Judul == yangDiCari || strings.Contains(percakapan.Judul, yangDiCari) {
+			FilterSemuaPercakapan = append(FilterSemuaPercakapan, percakapan)
+		}
+	}
+
+	return FilterSemuaPercakapan
+}
+
+func BinarySearch(percakapan []*models.Percakapan, yangDiCari string, urutan string) int {
+	var kiri, kanan, tengah int
+	ketemu := -1
+	kiri = 0
+	kanan = len(percakapan) - 1
+
+	for kiri <= kanan && ketemu == -1 {
+		tengah = (kanan + kiri) / 2
+
+		if percakapan[tengah].Judul == yangDiCari {
+			ketemu = tengah
+		}
+
+		if urutan == "a-z" {
+			if percakapan[tengah].Judul < yangDiCari {
+				kiri = tengah + 1
+			} else {
+				kanan = tengah - 1
+			}
+		} else if urutan == "z-a" {
+			if percakapan[tengah].Judul > yangDiCari {
+				kiri = tengah + 1
+			} else {
+				kanan = tengah - 1
+			}
+		}
+	}
+
+	return ketemu
+}
+
 /*********       PAGE HANDLER FUNCTIONS       *********/
 func IndexPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "index.html", gin.H{
@@ -67,83 +175,48 @@ func SejarahPage(c *gin.Context) {
 		return
 	}
 
-	FilterSemuaPercakapan := []*models.Percakapan{}
-	if SortParameter == "" {
-		// Sequential Search
-		for i := 0; i < len(SemuaPercakapan); i++ {
-			percakapan := SemuaPercakapan[i]
-			if percakapan.Judul == SearchParameter || strings.Contains(percakapan.Judul, SearchParameter) || SearchParameter == "" {
-				FilterSemuaPercakapan = append(FilterSemuaPercakapan, percakapan)
-			}
-		}
-	} else {
-		FilterSemuaPercakapan = SemuaPercakapan
+	if SortParameter == "urgency_lowest" {
+		selectionSort(SemuaPercakapan, "asc")
 	}
 
-	// Sort by Urgency level using Selection Sort
-	if SortParameter == "urgency_lowest" || SortParameter == "urgency_highest" {
-		for i := 0; i < len(FilterSemuaPercakapan); i++ {
-			maxIndex := i
-			for j := i + 1; j < len(FilterSemuaPercakapan); j++ {
-				kondisi := false
-				if SortParameter == "urgency_lowest" {
-					kondisi = FilterSemuaPercakapan[j].UrgencyLevel < FilterSemuaPercakapan[maxIndex].UrgencyLevel
-				} else if SortParameter == "urgency_highest" {
-					kondisi = FilterSemuaPercakapan[j].UrgencyLevel > FilterSemuaPercakapan[maxIndex].UrgencyLevel
-				}
-
-				if kondisi {
-					maxIndex = j
-				}
-			}
-
-			FilterSemuaPercakapan[i], FilterSemuaPercakapan[maxIndex] = FilterSemuaPercakapan[maxIndex], FilterSemuaPercakapan[i]
-		}
+	if SortParameter == "urgency_highest" {
+		selectionSort(SemuaPercakapan, "desc")
 	}
 
-	// Sort by date using Insertion Sort
-	if SortParameter == "newest" || SortParameter == "oldest" {
-		for i := 1; i < len(FilterSemuaPercakapan); i++ {
-			key := FilterSemuaPercakapan[i]
-			j := i - 1
-
-			kondisi := false
-			if SortParameter == "newest" {
-				kondisi = FilterSemuaPercakapan[j].CreatedAt.Before(key.CreatedAt)
-			} else if SortParameter == "oldest" {
-				kondisi = FilterSemuaPercakapan[j].CreatedAt.After(key.CreatedAt)
-			}
-
-			for j >= 0 && kondisi {
-				FilterSemuaPercakapan[j+1] = FilterSemuaPercakapan[j]
-				j = j - 1
-			}
-
-			FilterSemuaPercakapan[j+1] = key
-		}
-
+	if SortParameter == "newest" {
+		insertionSort(SemuaPercakapan, "asc")
 	}
 
-	if SortParameter != "" && SearchParameter != "" {
-		// Binary Search
-		low := 0
-		high := len(FilterSemuaPercakapan) - 1
-		for low <= high {
-			mid := (low + high) / 2
-			if FilterSemuaPercakapan[mid].Judul == SearchParameter {
-				FilterSemuaPercakapan = FilterSemuaPercakapan[mid:]
-				break
-			} else if FilterSemuaPercakapan[mid].Judul < SearchParameter {
-				low = mid + 1
+	if SortParameter == "oldest" {
+		insertionSort(SemuaPercakapan, "desc")
+	}
+
+	if SortParameter == "a-z" {
+		bubbleSort(SemuaPercakapan, "asc")
+	}
+
+	if SortParameter == "z-a" {
+		bubbleSort(SemuaPercakapan, "desc")
+	}
+
+	if SearchParameter != "" {
+		if SortParameter != "a-z" && SortParameter != "z-a" {
+			SemuaPercakapan = SequentialSearch(SemuaPercakapan, SearchParameter)
+		} else {
+			ketemu := BinarySearch(SemuaPercakapan, SearchParameter, SortParameter)
+			if ketemu == -1 {
+				SemuaPercakapan = []*models.Percakapan{}
 			} else {
-				high = mid - 1
+				SemuaPercakapan = []*models.Percakapan{
+					SemuaPercakapan[ketemu],
+				}
 			}
 		}
 	}
 
 	var PercakapanDiPilih *models.Percakapan
-	if len(FilterSemuaPercakapan) > 0 {
-		PercakapanDiPilih = FilterSemuaPercakapan[0]
+	if len(SemuaPercakapan) > 0 {
+		PercakapanDiPilih = SemuaPercakapan[0]
 	}
 
 	percakapanJSON, err := json.Marshal(PercakapanDiPilih)
@@ -155,7 +228,7 @@ func SejarahPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "sejarah.html", gin.H{
 		"title":      "History - MindfulAI",
 		"akun":       akunID,
-		"percakapan": FilterSemuaPercakapan,
+		"percakapan": SemuaPercakapan,
 		"dipilih":    percakapanJSON,
 	})
 }
@@ -563,7 +636,7 @@ func main() {
 	router.LoadHTMLGlob("templates/*")
 
 	router.GET("/", IndexPage)
-	router.POST("/logout", LogoutHandler)
+	router.GET("/logout", LogoutHandler)
 
 	AuthRedirectLogin := router.Group("/")
 	AuthRedirectLogin.Use(middleware.CekAutentikasiHandler(true))
