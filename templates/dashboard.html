@@ -328,7 +328,6 @@
 </head>
 <body>
     {{ template "navbar.html" }}
-
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
@@ -597,33 +596,11 @@
                 <div class="px-3 mb-3">
                     <h6 class="text-uppercase text-muted small">Main</h6>
                 </div>
-                <a href="#" class="sidebar-link active">
+                <a href="/dashboard" class="sidebar-link active">
                     <i class="fas fa-home"></i> Dashboard
                 </a>
-                <a href="#" class="sidebar-link">
+                <a href="/history" class="sidebar-link">
                     <i class="fas fa-comment-alt"></i> Chat
-                </a>
-                <a href="#" class="sidebar-link">
-                    <i class="fas fa-chart-line"></i> Progress
-                </a>
-                <a href="#" class="sidebar-link">
-                    <i class="fas fa-tasks"></i> Tasks
-                </a>
-                
-                <div class="px-3 mb-3 mt-4">
-                    <h6 class="text-uppercase text-muted small">Tools</h6>
-                </div>
-                <a href="#" class="sidebar-link">
-                    <i class="fas fa-book"></i> Journal
-                </a>
-                <a href="#" class="sidebar-link">
-                    <i class="fas fa-meditation"></i> Meditation
-                </a>
-                <a href="#" class="sidebar-link">
-                    <i class="fas fa-lightbulb"></i> Insights
-                </a>
-                <a href="#" class="sidebar-link">
-                    <i class="fas fa-cog"></i> Settings
                 </a>
             </div>
         </div>
@@ -657,15 +634,43 @@
             "4": "High",
             "5": "Critical"
         };
-        
+
+        function StartStreaming() {
+            const eventSource = new EventSource("/event-stream"); // your Gin server SSE endpoint
+
+            console.log("Setting server");
+
+            eventSource.onopen = function (event) {
+                console.log(event);
+            };
+            
+            eventSource.addEventListener("done", (event) => {
+                console.log("TERIMA", event.data)
+            })
+    
+            eventSource.onmessage = function(event) {
+                console.log("New message from server:", event.data);
+            };
+
+            eventSource.onerror = function(error) {
+                console.log(error);
+                eventSource.close();
+            };
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const chatForm = document.getElementById('chat-form');
             const chatInput = document.getElementById('chat-input');
             const chatMessages = document.getElementById('chat-detail-messages');
+            const urgencyDetailLevelItems = document.querySelectorAll('.urgency-detail-level');
+            const urgencyDetailDropdown = document.getElementById('urgencyDetailDropdown');
+            const judulChat = document.getElementById("judul-chat");
+            
             let UrgencyLevel = "1";
             let mood = "Good";
+            let jumlahPesan = 0;
             
-            chatForm.addEventListener('submit', function(e) {
+            chatForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
                 const message = chatInput.value.trim();
@@ -675,6 +680,83 @@
                     
                     showTypingIndicator();
 
+                    const response = await fetch("/api/chat", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                        },
+                        body: new URLSearchParams({
+                            "pesan": message,
+                            "percakapan_id": percakapan_id,
+                            "urgency_level": UrgencyLevel,
+                            "mood": mood,
+                            "mood_notes": document.getElementById('moodNotes').value
+                        }),
+                    });
+
+                    if (!response.ok) {
+                        console.error("Error from server");
+                        return;
+                    }
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder("utf-8");
+                    let buffer = "";
+                    let textSebelumnya = ""
+                    
+                    hideTypingIndicator();
+                    addMessage(textSebelumnya, 'bot');
+                    let pesanDiPilih = jumlahPesan;
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split("\n\n");
+                        buffer = lines.pop();
+                        // buffer = lines[lines.length - 1];
+
+                        for (let line of lines) {
+                            if (line.startsWith("data: ")) {
+                                const data = line.slice(6);
+                                textSebelumnya += data
+                                addMessage(textSebelumnya, 'bot', pesanDiPilih);
+                            } else if (line.trim().startsWith("event: done")) {
+                                line = line.trim()
+                                console.log(line, "SUDAH");
+
+                                const meta = JSON.parse(line.split("\n")[1].slice(6));
+                                percakapan_id = meta.percakapan_id;
+                                
+                                urgencyDetailDropdown.innerHTML = `<span class="urgency-dot urgency-${meta.urgency_level}"></span> Urgency: ${meta.urgency_level} - ${UrgencyName[meta.urgency_level]}`;
+                                urgencyDetailLevelItems.forEach(i => {
+                                    i.classList.remove("active");
+                                    if(i.getAttribute("data-level") === meta.urgency_level) {
+                                        i.classList.add("active");
+                                    }
+                                });
+                                
+                                judulChat.innerText = meta.judul;
+                            } else if (line.trim().startsWith("event: error")) {
+                                line = line.trim()
+                                console.log("Ada error ketika ingin stream...", line.split("\n")[1].slice(6))
+                                addMessage("Sorry, I couldn't process your request. Please try again.", 'bot');
+                                break
+                            } 
+                            else {
+                                let data = line;
+                                if(data.trimStart().startsWith("data:")) {
+                                    data = data.trimStart().slice(6);
+                                }
+                                
+                                textSebelumnya += "\n\n" + data
+                                addMessage(textSebelumnya, 'bot', pesanDiPilih);
+                            }
+                        }
+                    }
+
+                    `
                     fetch("/api/chat", {
                         "credentials": "include",
                         "headers": {
@@ -699,30 +781,50 @@
                         "method": "POST",
                         "mode": "cors"
                     }).then(response => {
+                        console.log(response);
+                        /*
                         if (!response.ok) {
                             throw new Error('Hasil tidak valid');
                         }
                         return response.json();
+                        */
                     }).then(data => {
+                        /*
                         hideTypingIndicator();
                         addMessage(data.response, 'bot');
                         percakapan_id = data.percakapan_id;
+                        */
                     }).catch(error => {
+                        console.log(error);
                         hideTypingIndicator();
                         addMessage("Sorry, I couldn't process your request. Please try again.", 'bot');
                     });
+                    `
                 }
             });
             
-            function addMessage(text, sender) {
-                const messageDiv = document.createElement('div');
-                messageDiv.classList.add('message');
-                messageDiv.classList.add(sender === 'user' ? 'message-user' : 'message-bot');
-                
+            function addMessage(text, sender, pesanDiPilih) {
+                if(pesanDiPilih === undefined) {
+                    jumlahPesan++;
+                    const messageDiv = document.createElement('div');
+                    messageDiv.setAttribute("id", `pesan_${jumlahPesan}`);
+                    messageDiv.classList.add('message');
+                    messageDiv.classList.add(sender === 'user' ? 'message-user' : 'message-bot');
+                    
+                    messageDiv.innerHTML = marked.parse(text);
+                    
+                    chatMessages.appendChild(messageDiv);
+                    
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    return;
+                }
+
+                const messageDiv = document.getElementById(`pesan_${pesanDiPilih}`);
+                if(messageDiv === undefined) {
+                    return;
+                }
+
                 messageDiv.innerHTML = marked.parse(text);
-                
-                chatMessages.appendChild(messageDiv);
-                
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }
             
@@ -758,9 +860,6 @@
                 });
             });
 
-            const urgencyDetailLevelItems = document.querySelectorAll('.urgency-detail-level');
-            const urgencyDetailDropdown = document.getElementById('urgencyDetailDropdown');
-
             if(!jQuery.isEmptyObject(dipilihJSON)) {
                 urgencyDetailDropdown.innerHTML = `<span class="urgency-dot urgency-${dipilihJSON.urgency_level}"></span> Urgency: ${dipilihJSON.urgency_level} - ${UrgencyName[dipilihJSON.urgency_level]}`;
                 
@@ -793,7 +892,7 @@
                         "percakapan_id": percakapan_id,
                         "urgency_level": UrgencyLevel
                     }, function(data) {
-                        if (data.status === "success") {
+                        if (data.status === "sukses") {
                             console.log("Urgency level updated successfully.");
                         } else {
                             console.error("Failed to update urgency level.");

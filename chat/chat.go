@@ -2,6 +2,8 @@ package chat
 
 import (
 	"context"
+	"fmt"
+	"iter"
 	"os"
 	"strings"
 
@@ -42,6 +44,8 @@ func BuatChat(sejarah []*genai.Content) *genai.Chat {
 		SystemInstruction: genai.NewContentFromText(PROMPT_MENTAL_HEALTH, genai.RoleUser),
 	}
 
+	// There is a bug for Chatbot in adding history. It suddenly forget everything what the user asked after 2 or more user's chat. [23-05-20025 22:11]
+	fmt.Println("SEJARAH: ", len(history))
 	chat, err := client.Chats.Create(ctx, "gemini-2.0-flash", config, history)
 	if err != nil {
 		panic(err)
@@ -50,25 +54,12 @@ func BuatChat(sejarah []*genai.Content) *genai.Chat {
 	return chat
 }
 
-func KirimPesanKeChat(cs *genai.Chat, pesan string) (*genai.GenerateContentResponse, error) {
-	return cs.SendMessage(ctx, genai.Part{Text: pesan})
-}
-
-func UlangiJawaban(cs *genai.Chat) (*genai.GenerateContentResponse, error) {
-	PesanHistory := cs.History(false)
-
-	DialogModel := PesanHistory[len(PesanHistory)-1]
-	Omongan := PesanHistory[len(PesanHistory)-2]
-
-	if DialogModel.Role == "user" || Omongan.Role != "user" {
-		return nil, nil
-	}
-
-	return cs.GenerateContent(ctx, "gemini-2.0-flash", cs.History(false), nil)
-}
-
 func KirimPesan(cs *genai.Chat, pesan string) (*genai.GenerateContentResponse, error) {
 	return cs.SendMessage(ctx, genai.Part{Text: pesan})
+}
+
+func KirimPesanStream(cs *genai.Chat, pesan string) iter.Seq2[*genai.GenerateContentResponse, error] {
+	return cs.GenerateContentStream(ctx, "gemini-2.0-flash", genai.Text(pesan), nil)
 }
 
 func DapatinJudulPercakapan(pesan string) string {

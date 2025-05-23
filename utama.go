@@ -148,14 +148,27 @@ func DashboardPage(c *gin.Context) {
 	DataGin["title"] = "Dashboard - MindfulAI"
 
 	var percakapan models.Percakapan
-	fmt.Println("Percakapan ID:", percakapan_id)
+
 	if percakapan_id != "" {
 		database.Database.Preload("Omongan").Where("id = ? AND akun_id = ?", percakapan_id, akunID).First(&percakapan)
+
+		n := len(percakapan.Omongan)
+		for i := 0; i < n-1; i++ {
+			for j := 0; j < n-i-1; j++ {
+				if percakapan.Omongan[j].CreatedAt.After(percakapan.Omongan[j+1].CreatedAt) {
+					temp := percakapan.Omongan[j]
+					percakapan.Omongan[j] = percakapan.Omongan[j+1]
+					percakapan.Omongan[j+1] = temp
+				}
+			}
+		}
+
 		percakapanJSON, err := json.Marshal(percakapan)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to convert conversation to JSON"})
 			return
 		}
+
 		DataGin["dipilih"] = percakapanJSON
 	}
 
@@ -339,14 +352,46 @@ func ChatHandler(c *gin.Context) {
 	}
 
 	cs := chat.BuatChat(contentSejarah)
-	hasil, err := chat.KirimPesan(cs, pesan+"\n\nUser's Mood: "+mood+"\nUser's Mood Notes: "+moodNotes)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send message"})
+
+	// No Streaming, Only text | Yucky 🤢
+	// hasil, err := chat.KirimPesan(cs, pesan+"\n\nUser's Mood: "+mood+"\nUser's Mood Notes: "+moodNotes)
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send message"})
+	// 	return
+	// }
+
+	// Streaming text, like ChatGPT | Sugoi 🤩
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("Transfer-Encoding", "chunked")
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+	stream := chat.KirimPesanStream(cs, pesan+"\n\nUser's Mood: "+mood+"\nUser's Mood Notes: "+moodNotes)
+
+	flusher, ok := c.Writer.(http.Flusher)
+	if !ok {
+		c.String(http.StatusInternalServerError, "Streaming unsupported!")
 		return
 	}
 
+	pesanFull := ""
+	fmt.Println("SEBELUM STREAM")
+	for chunk, err := range stream {
+		if err != nil {
+			fmt.Fprintf(c.Writer, "event: error\ndata: %s\n\n", err.Error())
+			flusher.Flush()
+			break
+		}
+
+		fmt.Fprintf(c.Writer, "data: %s\n\n", chunk.Candidates[0].Content.Parts[0].Text)
+		flusher.Flush()
+		pesanFull += chunk.Candidates[0].Content.Parts[0].Text
+	}
+
+	fmt.Println("SUDAH SELESAI", pesanFull)
 	omongan = models.Omongan{
-		Pesan:        hasil.Candidates[0].Content.Parts[0].Text,
+		Pesan:        pesanFull,
 		Pengirim:     "bot",
 		PercakapanID: percakapan.ID,
 	}
@@ -356,10 +401,9 @@ func ChatHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"response":      hasil.Candidates[0].Content.Parts[0].Text,
-		"percakapan_id": percakapan.ID,
-	})
+	final := fmt.Sprintf(`{"percakapan_id":"%d", "urgency_level":"%d", "judul":"%s"}`, percakapan.ID, percakapan.UrgencyLevel, percakapan.Judul)
+	fmt.Fprintf(c.Writer, "event: done\ndata: %s\n\n", final)
+	flusher.Flush()
 }
 
 func DapatinChatHandler(c *gin.Context) {
@@ -389,6 +433,17 @@ func DapatinChatHandler(c *gin.Context) {
 	if err := database.Database.Preload("Omongan").Where(&models.Percakapan{ID: uint(intPercakapanID), AkunID: intAkunID}).First(&percakapan).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Conversation not found"})
 		return
+	}
+
+	n := len(percakapan.Omongan)
+	for i := 0; i < n-1; i++ {
+		for j := 0; j < n-i-1; j++ {
+			if percakapan.Omongan[j].CreatedAt.After(percakapan.Omongan[j+1].CreatedAt) {
+				temp := percakapan.Omongan[j]
+				percakapan.Omongan[j] = percakapan.Omongan[j+1]
+				percakapan.Omongan[j+1] = temp
+			}
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
